@@ -14,12 +14,12 @@ const rsyncPlugin = {
   name: "rsyncPlugin",
   setup(build) {
     build.onEnd((result) => {
-      if (process.env.USER !== "czottmann" || isProduction) {
+      if (process.env.USER !== "michaelsageryd" || isProduction) {
         return;
       }
 
       exec(
-        "../bin/sync-current-plugins-to-workbench-vault.fish",
+        "../bin/sync-current-plugins-to-workbench-vault.sh",
         (error, stdout, stderr) => {
           if (error) {
             console.log(`exec error: ${error}`);
@@ -28,7 +28,7 @@ const rsyncPlugin = {
             console.log(stderr);
           } else
             console.log(
-              "[watch] sync'd via `../bin/sync-current-plugins-to-workbench-vault.fish`"
+              "[watch] sync'd via `../bin/sync-current-plugins-to-workbench-vault.sh`"
             );
         }
       );

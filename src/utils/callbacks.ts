@@ -26,14 +26,14 @@ import {
 export function sendUrlCallback(
   baseURL: string,
   handlerRes: AnyHandlerResult,
-  params: AnyParams | ObsidianProtocolData,
+  params: AnyParams | ObsidianProtocolData
 ): StringResultObject {
   const url = new URL(baseURL);
 
   if (handlerRes.isSuccess) {
-    addObjectToUrlSearchParams((<AnyHandlerSuccess> handlerRes).result, url);
+    addObjectToUrlSearchParams((<AnyHandlerSuccess>handlerRes).result, url);
   } else {
-    const { errorCode, errorMessage } = <HandlerFailure> handlerRes;
+    const { errorCode, errorMessage } = <HandlerFailure>handlerRes;
     url.searchParams.set("errorCode", errorCode.toString());
     url.searchParams.set("errorMessage", errorMessage);
   }
@@ -43,12 +43,12 @@ export function sendUrlCallback(
   }
 
   const returnParams: Record<string, string> = params["debug-mode"]
-    ? excludeKeys(<any> params, [
-      "debug-mode",
-      "x-success",
-      "x-error",
-      "_computed",
-    ])
+    ? excludeKeys(<any>params, [
+        "debug-mode",
+        "x-success",
+        "x-error",
+        "_computed",
+      ])
     : {};
   addObjectToUrlSearchParams(returnParams, url, "input");
 
@@ -70,7 +70,7 @@ export function sendUrlCallback(
 function addObjectToUrlSearchParams(
   obj: Record<string, any>,
   url: URL,
-  prefix: string = XCALLBACK_RESULT_PREFIX,
+  prefix: string = XCALLBACK_RESULT_PREFIX
 ) {
   const sortedKeys = Object.keys(obj).sort();
   for (const key of sortedKeys) {
@@ -78,16 +78,13 @@ function addObjectToUrlSearchParams(
 
     let val: string;
     if (typeof obj[key] === "string") {
-      val = <string> obj[key];
+      val = <string>obj[key];
     } else if (obj[key] instanceof TAbstractFile) {
-      val = (<TAbstractFile> obj[key]).path;
+      val = (<TAbstractFile>obj[key]).path;
     } else {
       val = JSON.stringify(obj[key]);
     }
 
-    url.searchParams.set(
-      toKebabCase(`${prefix}-${key}`),
-      val,
-    );
+    url.searchParams.set(toKebabCase(`${prefix}-${key}`), val);
   }
 }

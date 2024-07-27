@@ -4,6 +4,8 @@ import {
   Plugin,
   TAbstractFile,
 } from "obsidian";
+import * as http from "http";
+import url from "url";
 import { z, ZodError } from "zod";
 import { URI_NAMESPACE } from "src/constants";
 import { AnyParams, RoutePath, routes } from "src/routes";
@@ -27,10 +29,13 @@ import {
   logToConsole,
   showBrandedNotice,
 } from "src/utils/ui";
+import { error } from "console";
 
 export default class ActionsURI extends Plugin {
   // @ts-ignore
   settings: PluginSettings;
+  server!: http.Server;
+  registeredRoutes: string[] = [];
 
   defaultSettings: PluginSettings = {
     frontmatterKey: "uid",
@@ -38,21 +43,63 @@ export default class ActionsURI extends Plugin {
 
   async onload() {
     self(this);
+
     await this.loadSettings();
     this.registerRoutes(routes);
     this.addSettingTab(new SettingsTab(this.app, this));
+
+    // Start the HTTP server
+    this.server = http.createServer(
+      (req: http.IncomingMessage, res: http.ServerResponse) =>
+        this.handleRequest(req, res)
+    );
+    this.server.listen(3000, () => {
+      console.log("HTTP Server running on port 3000");
+    });
   }
 
   onunload() {
-    // Just act natural.
+    if (this.server) {
+      this.server.close();
+      console.log("HTTP Server stopped");
+    }
   }
 
   async loadSettings() {
-    this.settings = { ...this.defaultSettings, ...await this.loadData() };
+    this.settings = { ...this.defaultSettings, ...(await this.loadData()) };
   }
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ) {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+
+    // Get the query parameters
+    const pathname = parsedUrl.pathname;
+
+    // Get all query parameters as a single object
+    const queryParams = Object.fromEntries(parsedUrl.searchParams);
+
+    if (this.registeredRoutes[pathname]) {
+      console.log(queryParams);
+      const result = await this.registeredRoutes[pathname].handler({
+        ...queryParams,
+        action: pathname,
+        "x-error": "http://localhost:3000/error",
+        "x-success": "http://localhost:3000/success",
+      });
+
+      res.writeHead(200);
+      res.end(JSON.stringify(result));
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
   }
 
   /**
@@ -69,32 +116,44 @@ export default class ActionsURI extends Plugin {
    * route tree
    */
   private registerRoutes(routeTree: RoutePath) {
-    const registeredRoutes: string[] = [];
-
     for (const [routePath, routeSubpaths] of Object.entries(routeTree)) {
       for (const route of routeSubpaths) {
         const { path, schema, handler } = route;
-        const fullPath = normalizePath(`${URI_NAMESPACE}/${routePath}/${path}`)
-          .replace(/\/$/, "");
+        const fullPath = normalizePath(
+          `${URI_NAMESPACE}/${routePath}/${path}`
+        ).replace(/\/$/, "");
 
         this.registerObsidianProtocolHandler(
           fullPath,
           async (incomingParams) => {
+            console.log(incomingParams);
+
             const res = await schema.safeParseAsync(incomingParams);
             res.success
               ? await this.handleIncomingCall(
-                handler,
-                res.data as z.infer<typeof schema>,
-              )
+                  handler,
+                  res.data as z.infer<typeof schema>
+                )
               : this.handleParseError(res.error, incomingParams);
-          },
+          }
         );
 
-        registeredRoutes.push(fullPath);
+        this.registeredRoutes["/" + fullPath] = {
+          path: fullPath,
+          handler: async (incomingParams) => {
+            const res = await schema.safeParseAsync(incomingParams);
+            return res.success
+              ? await this.handleIncomingCall(
+                  handler,
+                  res.data as z.infer<typeof schema>
+                )
+              : this.handleParseError(res.error, incomingParams);
+          },
+        };
       }
     }
 
-    logToConsole("Registered URI handlers:", registeredRoutes);
+    logToConsole("Registered URI handlers:", this.registeredRoutes);
   }
 
   /**
@@ -111,23 +170,23 @@ export default class ActionsURI extends Plugin {
    */
   private async handleIncomingCall(
     handlerFunc: HandlerFunction,
-    params: AnyParams,
+    params: AnyParams
   ): Promise<ProcessingResult> {
     let handlerResult: AnyHandlerResult;
 
     try {
       handlerResult = await handlerFunc.bind(this)(params);
     } catch (error) {
-      const msg = `Handler error: ${(<Error> error).message}`;
+      const msg = `Handler error: ${(<Error>error).message}`;
       handlerResult = failure(ErrorCode.HandlerError, msg);
       showBrandedNotice(msg);
       logErrorToConsole(msg);
     }
 
-    const res = <ProcessingResult> {
+    const res = <ProcessingResult>{
       params: this.prepParamsForConsole(params),
       handlerResult,
-      sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
+      // sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
       openResult: await this.openFileIfNeeded(handlerResult, params),
     };
 
@@ -144,11 +203,11 @@ export default class ActionsURI extends Plugin {
     const newParams: any = { ...params };
 
     Object.keys(params).forEach((key) => {
-      const value = (<any> params)[key];
+      const value = (<any>params)[key];
       newParams[key] = value instanceof TAbstractFile ? value.path : value;
     });
 
-    return <AnyParams> newParams;
+    return <AnyParams>newParams;
   }
 
   /**
@@ -170,13 +229,16 @@ export default class ActionsURI extends Plugin {
         const message = e.message.replace(/^.+(Expected )/g, "$1");
         return `- ${e.path.join(".")}: ${message}`;
       }),
-    ].flat().join("\n");
+    ]
+      .flat()
+      .join("\n");
 
     showBrandedNotice(msg);
     logErrorToConsole(msg);
 
     if (params["x-error"]) {
-      const msg2 = "[Bad request] " +
+      const msg2 =
+        "[Bad request] " +
         parseError.errors
           .map((e) => `${e.path.join(".")}: ${e.message}`)
           .join("; ");
@@ -184,7 +246,7 @@ export default class ActionsURI extends Plugin {
       sendUrlCallback(
         params["x-error"],
         failure(ErrorCode.HandlerError, msg2),
-        params,
+        params
       );
     }
   }
@@ -206,20 +268,20 @@ export default class ActionsURI extends Plugin {
    */
   private sendUrlCallbackIfNeeded(
     handlerRes: AnyHandlerResult,
-    params: AnyParams,
+    params: AnyParams
   ): StringResultObject {
     if (handlerRes.isSuccess) {
       return params["x-success"]
         ? sendUrlCallback(
-          params["x-success"],
-          <AnyHandlerSuccess> handlerRes,
-          params,
-        )
+            params["x-success"],
+            <AnyHandlerSuccess>handlerRes,
+            params
+          )
         : success("No `x-error` callback URL provided");
     }
 
     return params["x-error"]
-      ? sendUrlCallback(params["x-error"], <HandlerFailure> handlerRes, params)
+      ? sendUrlCallback(params["x-error"], <HandlerFailure>handlerRes, params)
       : success("No `x-error` callback URL provided");
   }
 
@@ -234,22 +296,22 @@ export default class ActionsURI extends Plugin {
    */
   private async openFileIfNeeded(
     handlerResult: AnyHandlerResult,
-    params: AnyParams,
+    params: AnyParams
   ): Promise<StringResultObject> {
     // Do we need to open anything in general?
     if (!handlerResult.isSuccess) {
       return success("No file to open, the handler failed");
     }
 
-    if ((<any> params).silent) {
+    if ((<any>params).silent) {
       return success("No file to open, the `silent` parameter was set");
     }
 
     // Do we have information what to open?
-    const { processedFilepath } = <HandlerFileSuccess> handlerResult;
+    const { processedFilepath } = <HandlerFileSuccess>handlerResult;
     if (!processedFilepath) {
       return success(
-        "No file to open, handler didn't return a `processedFilepath` property",
+        "No file to open, handler didn't return a `processedFilepath` property"
       );
     }
 
