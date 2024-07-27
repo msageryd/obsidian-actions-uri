@@ -73,6 +73,35 @@ export default class ActionsURI extends Plugin {
     await this.saveData(this.settings);
   }
 
+  private async handleRequest(
+    req: http.IncomingMessage,
+    res: http.ServerResponse
+  ) {
+    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+
+    // Get the query parameters
+    const pathname = parsedUrl.pathname;
+
+    // Get all query parameters as a single object
+    const queryParams = Object.fromEntries(parsedUrl.searchParams);
+
+    if (this.registeredRoutes[pathname]) {
+      console.log(queryParams);
+      const result = await this.registeredRoutes[pathname].handler({
+        ...queryParams,
+        action: pathname,
+        "x-error": "http://localhost:3000/error",
+        "x-success": "http://localhost:3000/success",
+      });
+
+      res.writeHead(200);
+      res.end(JSON.stringify(result));
+    } else {
+      res.writeHead(404);
+      res.end();
+    }
+  }
+
   /**
    * Takes a list of routes and registers them together with their handlers in
    * Obsidian.
@@ -144,7 +173,7 @@ export default class ActionsURI extends Plugin {
     const res = <ProcessingResult>{
       params: this.prepParamsForConsole(params),
       handlerResult,
-      sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
+      // sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
       openResult: await this.openFileIfNeeded(handlerResult, params),
     };
 
