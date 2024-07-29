@@ -7,7 +7,7 @@ import {
 } from "obsidian";
 
 import { z, ZodError } from "zod";
-import { URI_NAMESPACE } from "src/constants";
+import { STRINGS, URI_NAMESPACE } from "src/constants";
 import { AnyParams, RoutePath, routes } from "src/routes";
 import { SettingsTab } from "src/settings";
 import {
@@ -185,7 +185,9 @@ export default class ActionsURI extends Plugin {
         // Some zod errors are too verbose, from them we strip everything but
         // the important part.
         const message = e.message.replace(/^.+(Expected )/g, "$1");
-        return `- ${e.path.join(".")}: ${message}`;
+        return e.path.length > 0
+          ? `- ${e.path.join(".")}: ${message}`
+          : `- ${message}`;
       }),
     ]
       .flat()
