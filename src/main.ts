@@ -77,7 +77,7 @@ export default class ActionsURI extends Plugin {
     req: http.IncomingMessage,
     res: http.ServerResponse
   ) {
-    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const parsedUrl = new URL(req.url || "/", `http://${req.headers.host}`);
 
     // Get the query parameters
     const pathname = parsedUrl.pathname;
@@ -87,14 +87,12 @@ export default class ActionsURI extends Plugin {
 
     if (this.registeredRoutes[pathname]) {
       console.log(queryParams);
-      const result = await this.registeredRoutes[pathname].handler({
+      const result = await this.registeredRoutes[pathname]({
         ...queryParams,
         action: pathname,
-        "x-error": "http://localhost:3000/error",
-        "x-success": "http://localhost:3000/success",
       });
 
-      res.writeHead(200);
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(result));
     } else {
       res.writeHead(404);
@@ -173,7 +171,7 @@ export default class ActionsURI extends Plugin {
     const res = <ProcessingResult>{
       params: this.prepParamsForConsole(params),
       handlerResult,
-      // sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
+      sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
       openResult: await this.openFileIfNeeded(handlerResult, params),
     };
 
