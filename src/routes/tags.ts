@@ -7,10 +7,7 @@ import { helloRoute } from "src/utils/routing";
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({
-  "x-error": z.string().url(),
-  "x-success": z.string().url(),
-});
+const listParams = incomingBaseParams.extend({});
 
 // TYPES ----------------------------------------
 
@@ -31,10 +28,11 @@ export const routePath: RoutePath = {
 
 async function handleList(
   this: RealLifePlugin,
-  params: ListParams,
+  params: ListParams
 ): Promise<HandlerTagsSuccess | HandlerFailure> {
   return success({
-    tags: Object.keys(this.app.metadataCache.getTags())
-      .sort((a, b) => a.localeCompare(b)),
+    tags: Object.keys(this.app.metadataCache.getTags()).sort((a, b) =>
+      a.localeCompare(b)
+    ),
   });
 }

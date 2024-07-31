@@ -5,7 +5,6 @@ import {
   TAbstractFile,
 } from "obsidian";
 import * as http from "http";
-import url from "url";
 import { z, ZodError } from "zod";
 import { URI_NAMESPACE } from "src/constants";
 import { AnyParams, RoutePath, routes } from "src/routes";
@@ -34,8 +33,8 @@ import { error } from "console";
 export default class ActionsURI extends Plugin {
   // @ts-ignore
   settings: PluginSettings;
-  server!: http.Server;
-  registeredRoutes: string[] = [];
+  httpServer!: http.Server;
+  registeredRoutes: Record<string, HandlerFunction> = {};
 
   defaultSettings: PluginSettings = {
     frontmatterKey: "uid",
@@ -45,22 +44,29 @@ export default class ActionsURI extends Plugin {
     self(this);
 
     await this.loadSettings();
-    this.registerRoutes(routes);
     this.addSettingTab(new SettingsTab(this.app, this));
+    this.registerRoutes(routes);
 
-    // Start the HTTP server
-    this.server = http.createServer(
-      (req: http.IncomingMessage, res: http.ServerResponse) =>
-        this.handleRequest(req, res)
-    );
-    this.server.listen(3000, () => {
-      console.log("HTTP Server running on port 3000");
-    });
+    // Maybe start the HTTP server
+    const enableHttpServer =
+      this.settings.enableHttpServer && !Platform.isMobile;
+
+    if (enableHttpServer) {
+      this.httpServer = http.createServer(
+        (req: http.IncomingMessage, res: http.ServerResponse) =>
+          this.handleRequest(req, res)
+      );
+
+      const httpPort = 3000; //this.settings.httpPort || 3000;
+      this.httpServer.listen(httpPort, () => {
+        console.log(`HTTP Server running on port ${httpPort}`);
+      });
+    }
   }
 
   onunload() {
-    if (this.server) {
-      this.server.close();
+    if (this.httpServer) {
+      this.httpServer.close();
       console.log("HTTP Server stopped");
     }
   }
@@ -77,7 +83,7 @@ export default class ActionsURI extends Plugin {
     req: http.IncomingMessage,
     res: http.ServerResponse
   ) {
-    const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
+    const parsedUrl = new URL(req.url || "/", `http://${req.headers.host}`);
 
     // Get the query parameters
     const pathname = parsedUrl.pathname;
@@ -87,14 +93,12 @@ export default class ActionsURI extends Plugin {
 
     if (this.registeredRoutes[pathname]) {
       console.log(queryParams);
-      const result = await this.registeredRoutes[pathname].handler({
+      const result = await this.registeredRoutes[pathname]({
         ...queryParams,
         action: pathname,
-        "x-error": "http://localhost:3000/error",
-        "x-success": "http://localhost:3000/success",
       });
 
-      res.writeHead(200);
+      res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(result));
     } else {
       res.writeHead(404);
@@ -138,17 +142,14 @@ export default class ActionsURI extends Plugin {
           }
         );
 
-        this.registeredRoutes["/" + fullPath] = {
-          path: fullPath,
-          handler: async (incomingParams) => {
-            const res = await schema.safeParseAsync(incomingParams);
-            return res.success
-              ? await this.handleIncomingCall(
-                  handler,
-                  res.data as z.infer<typeof schema>
-                )
-              : this.handleParseError(res.error, incomingParams);
-          },
+        this.registeredRoutes["/" + fullPath] = async (incomingParams) => {
+          const res = await schema.safeParseAsync(incomingParams);
+          return res.success
+            ? await this.handleIncomingCall(
+                handler,
+                res.data as z.infer<typeof schema>
+              )
+            : this.handleParseError(res.error, incomingParams);
         };
       }
     }
@@ -186,7 +187,7 @@ export default class ActionsURI extends Plugin {
     const res = <ProcessingResult>{
       params: this.prepParamsForConsole(params),
       handlerResult,
-      // sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
+      sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
       openResult: await this.openFileIfNeeded(handlerResult, params),
     };
 

@@ -15,10 +15,7 @@ import { zodCommaSeparatedStrings } from "src/utils/zod";
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({
-  "x-error": z.string().url(),
-  "x-success": z.string().url(),
-});
+const listParams = incomingBaseParams.extend({});
 
 const executeParams = incomingBaseParams.extend({
   commands: zodCommaSeparatedStrings,
@@ -30,9 +27,7 @@ const executeParams = incomingBaseParams.extend({
 type ListParams = z.infer<typeof listParams>;
 type ExecuteParams = z.infer<typeof executeParams>;
 
-export type AnyLocalParams =
-  | ListParams
-  | ExecuteParams;
+export type AnyLocalParams = ListParams | ExecuteParams;
 
 // ROUTES ----------------------------------------
 
@@ -52,7 +47,7 @@ export const routePath: RoutePath = {
 
 async function handleList(
   this: RealLifePlugin,
-  params: ListParams,
+  params: ListParams
 ): Promise<HandlerCommandsSuccess | HandlerFailure> {
   const commands = this.app.commands
     .listCommands()
@@ -63,7 +58,7 @@ async function handleList(
 
 async function handleExecute(
   this: RealLifePlugin,
-  params: ExecuteParams,
+  params: ExecuteParams
 ): Promise<HandlerCommandsExecutionSuccess | HandlerFailure> {
   const { commands } = params;
   const pauseInMilliseconds = (params["pause-in-secs"] || 0.2) * 1000;

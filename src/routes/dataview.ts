@@ -18,9 +18,7 @@ import { helloRoute } from "src/utils/routing";
 // SCHEMATA ----------------------------------------
 
 const readParams = incomingBaseParams.extend({
-  "dql": z.string(),
-  "x-error": z.string().url(),
-  "x-success": z.string().url(),
+  dql: z.string(),
 });
 
 // TYPES ----------------------------------------
@@ -44,14 +42,14 @@ export const routePath: RoutePath = {
 
 async function handleTableQuery(
   this: RealLifePlugin,
-  params: ReadParams,
+  params: ReadParams
 ): Promise<HandlerDataviewSuccess | HandlerFailure> {
   return await executeDataviewQuery.bind(this)("table", params);
 }
 
 async function handleListQuery(
   this: RealLifePlugin,
-  params: ReadParams,
+  params: ReadParams
 ): Promise<HandlerDataviewSuccess | HandlerFailure> {
   return await executeDataviewQuery.bind(this)("list", params);
 }
@@ -67,14 +65,14 @@ function dqlValuesMapper(dataview: DataviewApi, v: any): any {
 async function executeDataviewQuery(
   this: RealLifePlugin,
   type: "table" | "list",
-  params: ReadParams,
+  params: ReadParams
 ): Promise<HandlerDataviewSuccess | HandlerFailure> {
   const dataview = getAPI(this.app);
 
   if (!isDataviewEnabled(this.app) || !dataview) {
     return failure(
       ErrorCode.FeatureUnavailable,
-      STRINGS.dataview_plugin_not_available,
+      STRINGS.dataview_plugin_not_available
     );
   }
 
@@ -82,7 +80,7 @@ async function executeDataviewQuery(
   if (!dql.toLowerCase().startsWith(type)) {
     return failure(
       ErrorCode.InvalidInput,
-      STRINGS[`dataview_dql_must_start_with_${type}`],
+      STRINGS[`dataview_dql_must_start_with_${type}`]
     );
   }
 

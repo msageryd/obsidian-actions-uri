@@ -24,8 +24,6 @@ const getParams = incomingBaseParams
   .merge(noteTargetingParams)
   .extend({
     silent: zodOptionalBoolean,
-    "x-error": z.string().url(),
-    "x-success": z.string().url(),
   })
   .transform(resolveNoteTargetingStrict);
 
@@ -50,10 +48,7 @@ type GetParams = Prettify<z.infer<typeof getParams>>;
 type SetParams = Prettify<z.infer<typeof setParams>>;
 type RemoveKeysParams = Prettify<z.infer<typeof removeKeysParams>>;
 
-export type AnyLocalParams =
-  | GetParams
-  | SetParams
-  | RemoveKeysParams;
+export type AnyLocalParams = GetParams | SetParams | RemoveKeysParams;
 
 // ROUTES --------------------
 
@@ -74,40 +69,52 @@ export const routePath: RoutePath = {
 // HANDLERS --------------------
 
 async function handleGet(
-  params: GetParams,
+  params: GetParams
 ): Promise<HandlerPropertiesSuccess | HandlerFailure> {
-  const { _resolved: { inputFile } } = params;
+  const {
+    _resolved: { inputFile },
+  } = params;
   return success(
     { properties: propertiesForFile(inputFile!) },
-    inputFile?.path,
+    inputFile?.path
   );
 }
 
 async function handleSet(
-  params: SetParams,
+  params: SetParams
 ): Promise<HandlerFileSuccess | HandlerFailure> {
-  const { _resolved: { inputFile }, mode, properties } = params;
-  const props = mode === "update"
-    ? { ...propertiesForFile(inputFile!), ...properties }
-    : properties;
+  const {
+    _resolved: { inputFile },
+    mode,
+    properties,
+  } = params;
+  const props =
+    mode === "update"
+      ? { ...propertiesForFile(inputFile!), ...properties }
+      : properties;
 
   return updateNote(inputFile!.path, sanitizedStringifyYaml(props));
 }
 
 async function handleClear(
-  params: GetParams,
+  params: GetParams
 ): Promise<HandlerFileSuccess | HandlerFailure> {
-  const { _resolved: { inputPath: path } } = params;
+  const {
+    _resolved: { inputPath: path },
+  } = params;
   return updateNote(path, "");
 }
 
 async function handleRemoveKeys(
-  params: RemoveKeysParams,
+  params: RemoveKeysParams
 ): Promise<HandlerFileSuccess | HandlerFailure> {
-  const { _resolved: { inputPath: path, inputFile }, keys } = params;
+  const {
+    _resolved: { inputPath: path, inputFile },
+    keys,
+  } = params;
 
   const props = propertiesForFile(inputFile!)!;
-  (<string[]> keys).forEach((key) => delete props[key]);
+  (<string[]>keys).forEach((key) => delete props[key]);
 
   return updateNote(path, sanitizedStringifyYaml(props));
 }

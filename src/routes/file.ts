@@ -24,10 +24,7 @@ import {
 
 // SCHEMATA ----------------------------------------
 
-const defaultParams = incomingBaseParams.extend({
-  "x-error": z.string().url(),
-  "x-success": z.string().url(),
-});
+const defaultParams = incomingBaseParams.extend({});
 
 const openParams = incomingBaseParams.extend({
   file: zodExistingFilePath,
@@ -74,16 +71,19 @@ export const routePath: RoutePath = {
 
 async function handleList(
   this: RealLifePlugin,
-  params: DefaultParams,
+  params: DefaultParams
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   return success({
-    paths: this.app.vault.getFiles().map((t) => t.path).sort(),
+    paths: this.app.vault
+      .getFiles()
+      .map((t) => t.path)
+      .sort(),
   });
 }
 
 async function handleGetActive(
   this: RealLifePlugin,
-  params: DefaultParams,
+  params: DefaultParams
 ): Promise<HandlerFilePathSuccess | HandlerFailure> {
   const res = this.app.workspace.getActiveFile();
   return res
@@ -92,7 +92,7 @@ async function handleGetActive(
 }
 
 async function handleOpen(
-  params: OpenParams,
+  params: OpenParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { file } = params;
   const res = await getFile(file.path);
@@ -102,7 +102,7 @@ async function handleOpen(
 }
 
 async function handleDelete(
-  params: DeleteParams,
+  params: DeleteParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { file } = params;
   const res = await trashFilepath(file.path, true);
@@ -110,7 +110,7 @@ async function handleDelete(
 }
 
 async function handleTrash(
-  params: DeleteParams,
+  params: DeleteParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { file } = params;
   const res = await trashFilepath(file.path);
@@ -118,7 +118,7 @@ async function handleTrash(
 }
 
 async function handleRename(
-  params: RenameParams,
+  params: RenameParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { file } = params;
   const res = await renameFilepath(file.path, params["new-filename"]);

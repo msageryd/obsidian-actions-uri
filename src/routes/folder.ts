@@ -20,10 +20,7 @@ import { success } from "src/utils/results-handling";
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({
-  "x-error": z.string().url(),
-  "x-success": z.string().url(),
-});
+const listParams = incomingBaseParams.extend({});
 
 const createParams = incomingBaseParams.extend({
   folder: zodSanitizedFolderPath,
@@ -45,10 +42,7 @@ type CreateParams = z.infer<typeof createParams>;
 type DeleteParams = z.infer<typeof deleteParams>;
 type RenameParams = z.infer<typeof renameParams>;
 
-export type AnyLocalParams =
-  | ListParams
-  | CreateParams
-  | DeleteParams;
+export type AnyLocalParams = ListParams | CreateParams | DeleteParams;
 
 // ROUTES ----------------------------------------
 
@@ -66,17 +60,18 @@ export const routePath: RoutePath = {
 // HANDLERS ----------------------------------------
 
 async function handleList(
-  params: ListParams,
+  params: ListParams
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   return success({
     paths: getFileMap()
       .filter((t) => t instanceof TFolder)
-      .map((t) => t.path.endsWith("/") ? t.path : `${t.path}/`).sort(),
+      .map((t) => (t.path.endsWith("/") ? t.path : `${t.path}/`))
+      .sort(),
   });
 }
 
 async function handleCreate(
-  params: CreateParams,
+  params: CreateParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   await createFolderIfNecessary(folder);
@@ -84,7 +79,7 @@ async function handleCreate(
 }
 
 async function handleRename(
-  params: RenameParams,
+  params: RenameParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   const res = await renameFilepath(folder.path, params["new-foldername"]);
@@ -92,7 +87,7 @@ async function handleRename(
 }
 
 async function handleDelete(
-  params: DeleteParams,
+  params: DeleteParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   const res = await trashFilepath(folder.path, true);
@@ -100,7 +95,7 @@ async function handleDelete(
 }
 
 async function handleTrash(
-  params: DeleteParams,
+  params: DeleteParams
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   const res = await trashFilepath(folder.path);
