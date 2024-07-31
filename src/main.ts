@@ -195,20 +195,37 @@ export default class ActionsURI extends Plugin {
 
     showBrandedNotice(msg);
     logErrorToConsole(msg);
+    if (!params["x-error"]) return;
 
-    if (params["x-error"]) {
-      const msg2 =
-        "[Bad request] " +
-        parseError.errors
-          .map((e) => `${e.path.join(".")}: ${e.message}`)
-          .join("; ");
-
+    // If there's a "note not found" error, that's the biggest issue, we'll
+    // return only that
+    const error404 = parseError.errors.find(
+      (e) => e.message === STRINGS.note_not_found
+    );
+    if (error404) {
       sendUrlCallback(
         params["x-error"],
-        failure(ErrorCode.HandlerError, msg2),
+        failure(ErrorCode.NotFound, `[Not found] ${error404.path.join(", ")}`),
         params
       );
+      return;
     }
+
+    const msg2 =
+      "[Bad request] " +
+      parseError.errors
+        .map((e) => {
+          return e.path.length > 0
+            ? `${e.path.join(", ")}: ${e.message}`
+            : e.message;
+        })
+        .join("; ");
+
+    sendUrlCallback(
+      params["x-error"],
+      failure(ErrorCode.HandlerError, msg2),
+      params
+    );
   }
 
   /**
