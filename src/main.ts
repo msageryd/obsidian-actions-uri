@@ -5,7 +5,7 @@ import {
   Platform,
   TAbstractFile,
 } from "obsidian";
-import * as http from "http";
+
 import { z, ZodError } from "zod";
 import { URI_NAMESPACE } from "src/constants";
 import { AnyParams, RoutePath, routes } from "src/routes";
@@ -29,12 +29,12 @@ import {
   logToConsole,
   showBrandedNotice,
 } from "src/utils/ui";
-import { error } from "console";
+import { IHttpServer } from "./httpServerTypes";
 
 export default class ActionsURI extends Plugin {
   // @ts-ignore
   settings: PluginSettings;
-  httpServer!: http.Server;
+  httpServer!: IHttpServer;
   registeredRoutes: Record<string, HandlerFunction> = {};
 
   defaultSettings: PluginSettings = {
@@ -52,22 +52,16 @@ export default class ActionsURI extends Plugin {
     const enableHttpServer = !Platform.isMobile; // && this.settings.enableHttpServer ;
 
     if (enableHttpServer) {
-      this.httpServer = http.createServer(
-        (req: http.IncomingMessage, res: http.ServerResponse) =>
-          this.handleRequest(req, res)
-      );
-
-      const httpPort = 3000; //this.settings.httpPort || 3000;
-      this.httpServer.listen(httpPort, () => {
-        console.log(`HTTP Server running on port ${httpPort}`);
+      import("./httpServer").then(async (serverModule) => {
+        this.httpServer = new serverModule.HttpServer(this);
+        await this.httpServer.startServer();
       });
     }
   }
 
   onunload() {
     if (this.httpServer) {
-      this.httpServer.close();
-      console.log("HTTP Server stopped");
+      this.httpServer.stopServer();
     }
   }
 
@@ -77,33 +71,6 @@ export default class ActionsURI extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
-  }
-
-  private async handleRequest(
-    req: http.IncomingMessage,
-    res: http.ServerResponse
-  ) {
-    const parsedUrl = new URL(req.url || "/", `http://${req.headers.host}`);
-
-    // Get the query parameters
-    const pathname = parsedUrl.pathname;
-
-    // Get all query parameters as a single object
-    const queryParams = Object.fromEntries(parsedUrl.searchParams);
-
-    if (this.registeredRoutes[pathname]) {
-      console.log(queryParams);
-      const result = await this.registeredRoutes[pathname]({
-        ...queryParams,
-        action: pathname,
-      });
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(result));
-    } else {
-      res.writeHead(404);
-      res.end();
-    }
   }
 
   /**
@@ -141,16 +108,6 @@ export default class ActionsURI extends Plugin {
               : this.handleParseError(res.error, incomingParams);
           }
         );
-
-        this.registeredRoutes["/" + fullPath] = async (incomingParams) => {
-          const res = await schema.safeParseAsync(incomingParams);
-          return res.success
-            ? await this.handleIncomingCall(
-                handler,
-                res.data as z.infer<typeof schema>
-              )
-            : this.handleParseError(res.error, incomingParams);
-        };
       }
     }
 
@@ -169,7 +126,7 @@ export default class ActionsURI extends Plugin {
    * @returns A `ProcessingResult` object containing the incoming parameters,
    * results from the handler, the callback sending and the note opening
    */
-  private async handleIncomingCall(
+  async handleIncomingCall(
     handlerFunc: HandlerFunction,
     params: AnyParams
   ): Promise<ProcessingResult> {
@@ -221,7 +178,7 @@ export default class ActionsURI extends Plugin {
    * @param params - Parameters from the incoming `x-callback-url` call after
    * being parsed & validated by Zod
    */
-  private handleParseError(parseError: ZodError, params: ObsidianProtocolData) {
+  handleParseError(parseError: ZodError, params: ObsidianProtocolData) {
     const msg = [
       "Incoming call failed",
       parseError.errors.map((e) => {
