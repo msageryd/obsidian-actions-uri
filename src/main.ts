@@ -49,8 +49,7 @@ export default class ActionsURI extends Plugin {
     this.registerRoutes(routes);
 
     // Maybe start the HTTP server
-    const enableHttpServer =
-      this.settings.enableHttpServer && !Platform.isMobile;
+    const enableHttpServer = !Platform.isMobile; // && this.settings.enableHttpServer ;
 
     if (enableHttpServer) {
       this.httpServer = http.createServer(
