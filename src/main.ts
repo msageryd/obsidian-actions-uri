@@ -73,33 +73,6 @@ export default class ActionsURI extends Plugin {
     await this.saveData(this.settings);
   }
 
-  private async handleRequest(
-    req: http.IncomingMessage,
-    res: http.ServerResponse
-  ) {
-    const parsedUrl = new URL(req.url || "/", `http://${req.headers.host}`);
-
-    // Get the query parameters
-    const pathname = parsedUrl.pathname;
-
-    // Get all query parameters as a single object
-    const queryParams = Object.fromEntries(parsedUrl.searchParams);
-
-    if (this.registeredRoutes[pathname]) {
-      console.log(queryParams);
-      const result = await this.registeredRoutes[pathname]({
-        ...queryParams,
-        action: pathname,
-      });
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(result));
-    } else {
-      res.writeHead(404);
-      res.end();
-    }
-  }
-
   /**
    * Takes a list of routes and registers them together with their handlers in
    * Obsidian.
