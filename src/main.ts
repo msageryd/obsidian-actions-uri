@@ -2,6 +2,7 @@ import {
   normalizePath,
   ObsidianProtocolData,
   Plugin,
+  Platform,
   TAbstractFile,
 } from "obsidian";
 import * as http from "http";
