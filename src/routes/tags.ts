@@ -28,7 +28,7 @@ export const routePath: RoutePath = {
 
 async function handleList(
   this: RealLifePlugin,
-  params: ListParams
+  params: ListParams,
 ): Promise<HandlerTagsSuccess | HandlerFailure> {
   return success({
     tags: Object.keys(this.app.metadataCache.getTags()).sort((a, b) =>

@@ -41,7 +41,7 @@ export const routePath: RoutePath = {
 // HANDLERS --------------------
 
 async function handleSearch(
-  params: DefaultParams
+  params: DefaultParams,
 ): Promise<HandlerSearchSuccess | HandlerFailure> {
   const res = await doSearch(params.query);
   return res.isSuccess ? success(res.result) : res;
@@ -49,7 +49,7 @@ async function handleSearch(
 
 async function handleOpen(
   this: RealLifePlugin,
-  params: DefaultParams
+  params: DefaultParams,
 ): Promise<HandlerTextSuccess> {
   // Let's open the search in the simplest way possible.
   window.open(
@@ -57,7 +57,7 @@ async function handleOpen(
       "vault=" +
       encodeURIComponent(this.app.vault.getName()) +
       "&query=" +
-      encodeURIComponent(params.query.trim())
+      encodeURIComponent(params.query.trim()),
   );
 
   return success({ message: "Opened search" });

@@ -47,7 +47,7 @@ export const routePath: RoutePath = {
 
 async function handleList(
   this: RealLifePlugin,
-  params: ListParams
+  params: ListParams,
 ): Promise<HandlerCommandsSuccess | HandlerFailure> {
   const commands = this.app.commands
     .listCommands()
@@ -58,7 +58,7 @@ async function handleList(
 
 async function handleExecute(
   this: RealLifePlugin,
-  params: ExecuteParams
+  params: ExecuteParams,
 ): Promise<HandlerCommandsExecutionSuccess | HandlerFailure> {
   const { commands } = params;
   const pauseInMilliseconds = (params["pause-in-secs"] || 0.2) * 1000;

@@ -60,7 +60,7 @@ export const routePath: RoutePath = {
 // HANDLERS ----------------------------------------
 
 async function handleList(
-  params: ListParams
+  params: ListParams,
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   return success({
     paths: getFileMap()
@@ -71,7 +71,7 @@ async function handleList(
 }
 
 async function handleCreate(
-  params: CreateParams
+  params: CreateParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   await createFolderIfNecessary(folder);
@@ -79,7 +79,7 @@ async function handleCreate(
 }
 
 async function handleRename(
-  params: RenameParams
+  params: RenameParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   const res = await renameFilepath(folder.path, params["new-foldername"]);
@@ -87,7 +87,7 @@ async function handleRename(
 }
 
 async function handleDelete(
-  params: DeleteParams
+  params: DeleteParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   const res = await trashFilepath(folder.path, true);
@@ -95,7 +95,7 @@ async function handleDelete(
 }
 
 async function handleTrash(
-  params: DeleteParams
+  params: DeleteParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const { folder } = params;
   const res = await trashFilepath(folder.path);

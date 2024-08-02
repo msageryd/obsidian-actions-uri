@@ -232,7 +232,7 @@ export const routePath: RoutePath = {
 
 async function handleList(
   this: RealLifePlugin,
-  params: ListParams
+  params: ListParams,
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   const { "periodic-note": periodicNoteType } = params;
   // If no periodic note type is specified, we return all notes.
@@ -249,7 +249,7 @@ async function handleList(
   if (!checkForEnabledPeriodicNoteFeature(periodicNoteType)) {
     return failure(
       ErrorCode.FeatureUnavailable,
-      STRINGS[`${periodicNoteType}_note`].feature_not_available
+      STRINGS[`${periodicNoteType}_note`].feature_not_available,
     );
   }
 
@@ -267,7 +267,7 @@ async function handleList(
  * handler won't be called if the file doesn't exist.
  */
 async function handleGet(
-  params: GetParams
+  params: GetParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -280,7 +280,7 @@ async function handleGet(
 
 async function handleGetActive(
   this: RealLifePlugin,
-  params: GetActiveParams
+  params: GetActiveParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const res = this.app.workspace.getActiveFile();
   if (res?.extension !== "md") {
@@ -302,7 +302,7 @@ async function handleGetActive(
 
 async function handleGetNamed(
   this: RealLifePlugin,
-  params: ReadFirstNamedParams
+  params: ReadFirstNamedParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const { file } = params;
   const sortBy = params["sort-by"] || "best-guess";
@@ -312,7 +312,7 @@ async function handleGetNamed(
   if (sortBy === "best-guess") {
     const res = this.app.metadataCache.getFirstLinkpathDest(
       sanitizeFilePath(file),
-      "/"
+      "/",
     );
     return res
       ? await getNoteDetails(res.path)
@@ -344,7 +344,7 @@ async function handleGetNamed(
  * handler won't be called if the file doesn't exist.
  */
 async function handleOpen(
-  params: OpenParams
+  params: OpenParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -357,7 +357,7 @@ async function handleOpen(
 
 async function handleCreate(
   this: RealLifePlugin,
-  params: CreateParams
+  params: CreateParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const {
     _resolved: { inputKey },
@@ -365,7 +365,7 @@ async function handleCreate(
 
   if (inputKey === NoteTargetingParameterKey.PeriodicNote) {
     return _handleCreatePeriodicNote.bind(this)(
-      params as CreatePeriodicNoteParams
+      params as CreatePeriodicNoteParams,
     );
   }
 
@@ -373,20 +373,20 @@ async function handleCreate(
   switch (applyValue) {
     case CreateApplyParameterValue.Content:
       return _handleCreateNoteFromContent.bind(this)(
-        params as CreateNoteApplyContentParams
+        params as CreateNoteApplyContentParams,
       );
 
     case CreateApplyParameterValue.Templater:
     case CreateApplyParameterValue.Templates:
       return _handleCreateNoteFromTemplate.bind(this)(
-        params as CreateNoteApplyTemplateParams
+        params as CreateNoteApplyTemplateParams,
       );
   }
 }
 
 async function handleAppend(
   this: RealLifePlugin,
-  params: AppendParams
+  params: AppendParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputKey, inputFile, inputPath },
@@ -412,7 +412,7 @@ async function handleAppend(
       const resHeadline = await prepareNoteForHeadlineBlockManipulation(
         path,
         belowHeadline,
-        ifHeadlineMissing
+        ifHeadlineMissing,
       );
       if (!resHeadline.isSuccess) {
         return resHeadline;
@@ -439,7 +439,7 @@ async function handleAppend(
     if (inputKey === NoteTargetingParameterKey.UID) {
       await this.app.fileManager.processFrontMatter(
         resCreate.result,
-        (fm) => (fm[this.settings.frontmatterKey] = uid!)
+        (fm) => (fm[this.settings.frontmatterKey] = uid!),
       );
     }
   }
@@ -455,7 +455,7 @@ async function handleAppend(
 
 async function handlePrepend(
   this: RealLifePlugin,
-  params: PrependParams
+  params: PrependParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputKey, inputFile, inputPath },
@@ -483,7 +483,7 @@ async function handlePrepend(
         const resHeadline = await prepareNoteForHeadlineBlockManipulation(
           path,
           belowHeadline,
-          ifHeadlineMissing
+          ifHeadlineMissing,
         );
         if (!resHeadline.isSuccess) {
           return resHeadline;
@@ -493,7 +493,7 @@ async function handlePrepend(
           path,
           belowHeadline,
           content,
-          shouldEnsureNewline
+          shouldEnsureNewline,
         );
       }
     }
@@ -502,7 +502,7 @@ async function handlePrepend(
       path,
       content,
       shouldEnsureNewline,
-      shouldIgnoreFrontMatter
+      shouldIgnoreFrontMatter,
     );
   }
 
@@ -522,7 +522,7 @@ async function handlePrepend(
     if (inputKey === NoteTargetingParameterKey.UID) {
       await this.app.fileManager.processFrontMatter(
         resCreate.result,
-        (fm) => (fm[this.settings.frontmatterKey] = uid!)
+        (fm) => (fm[this.settings.frontmatterKey] = uid!),
       );
     }
   }
@@ -537,7 +537,7 @@ async function handlePrepend(
 }
 
 async function handleTouch(
-  params: TouchParams
+  params: TouchParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -551,7 +551,7 @@ async function handleTouch(
 }
 
 async function handleSearchStringAndReplace(
-  params: SearchAndReplaceParams
+  params: SearchAndReplaceParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -567,7 +567,7 @@ async function handleSearchStringAndReplace(
 }
 
 async function handleSearchRegexAndReplace(
-  params: SearchAndReplaceParams
+  params: SearchAndReplaceParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -586,7 +586,7 @@ async function handleSearchRegexAndReplace(
 }
 
 async function handleDelete(
-  params: DeleteParams
+  params: DeleteParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -597,7 +597,7 @@ async function handleDelete(
 }
 
 async function handleTrash(
-  params: DeleteParams
+  params: DeleteParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -608,7 +608,7 @@ async function handleTrash(
 }
 
 async function handleRename(
-  params: RenameParams
+  params: RenameParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath },
@@ -624,7 +624,7 @@ async function handleRename(
 async function prepareNoteForHeadlineBlockManipulation(
   path: string,
   headline: string,
-  ifHeadlineMissing: IfHeadlineMissingParameterValue
+  ifHeadlineMissing: IfHeadlineMissingParameterValue,
 ): Promise<StringResultObject> {
   // Test if the headline exists in the note.
   const resNote = await getNoteContent(path);

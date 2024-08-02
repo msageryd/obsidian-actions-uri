@@ -202,12 +202,12 @@ export const routePath = routes;
 
 function getHandleList(periodicNoteType: PeriodicNoteType): HandlerFunction {
   return async function handleList(
-    incoming: AnyParams
+    incoming: AnyParams,
   ): Promise<HandlerPathsSuccess | HandlerFailure> {
     if (!checkForEnabledPeriodicNoteFeature(periodicNoteType)) {
       return failure(
         ErrorCode.FeatureUnavailable,
-        STRINGS[`${periodicNoteType}_note`].feature_not_available
+        STRINGS[`${periodicNoteType}_note`].feature_not_available,
       );
     }
 
@@ -222,16 +222,17 @@ function getHandleList(periodicNoteType: PeriodicNoteType): HandlerFunction {
 }
 
 function getHandleGetCurrent(
-  periodicNoteType: PeriodicNoteType
+  periodicNoteType: PeriodicNoteType,
 ): HandlerFunction {
   return async function handleGetCurrent(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerFileSuccess | HandlerFailure> {
-    const { silent } = <ReadParams>incomingParams;
+    const { silent } = <ReadParams> incomingParams;
     const shouldFocusNote = !silent;
 
-    const res =
-      getExistingPeriodicNotePathIfPluginIsAvailable(periodicNoteType);
+    const res = getExistingPeriodicNotePathIfPluginIsAvailable(
+      periodicNoteType,
+    );
     if (!res.isSuccess) return res;
     const filepath = res.result;
     if (shouldFocusNote) await focusOrOpenFile(filepath);
@@ -240,12 +241,12 @@ function getHandleGetCurrent(
 }
 
 function getHandleGetMostRecent(
-  periodicNoteType: PeriodicNoteType
+  periodicNoteType: PeriodicNoteType,
 ): HandlerFunction {
   return async function handleGetMostRecent(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerFileSuccess | HandlerFailure> {
-    const { silent } = <ReadParams>incomingParams;
+    const { silent } = <ReadParams> incomingParams;
     const shouldFocusNote = !silent;
 
     const res = getMostRecentPeriodicNotePath(periodicNoteType);
@@ -257,18 +258,19 @@ function getHandleGetMostRecent(
 }
 
 function getHandleOpenCurrent(
-  periodicNoteType: PeriodicNoteType
+  periodicNoteType: PeriodicNoteType,
 ): HandlerFunction {
   return async function handleOpenCurrent(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerTextSuccess | HandlerFailure> {
     // Since we force the `silent` param to be `false` (see section "SCHEMATA"
     // above), all this handlers needs to do is find the requested note path and
     // hand it back to the calling `handleIncomingCall()` (see `main.ts`) which
     // will take care of the rest.
 
-    const res =
-      getExistingPeriodicNotePathIfPluginIsAvailable(periodicNoteType);
+    const res = getExistingPeriodicNotePathIfPluginIsAvailable(
+      periodicNoteType,
+    );
     return res.isSuccess
       ? success({ message: STRINGS.note_opened }, res.result)
       : res;
@@ -276,10 +278,10 @@ function getHandleOpenCurrent(
 }
 
 function getHandleOpenMostRecent(
-  periodicNoteType: PeriodicNoteType
+  periodicNoteType: PeriodicNoteType,
 ): HandlerFunction {
   return async function handleOpenMostRecent(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerTextSuccess | HandlerFailure> {
     // Since we force the `silent` param to be `false` (see section "SCHEMATA"
     // above), all this handlers needs to do is find the requested note path and
@@ -296,24 +298,24 @@ function getHandleOpenMostRecent(
 function getHandleCreate(periodicNoteType: PeriodicNoteType): HandlerFunction {
   return async function handleCreate(
     this: RealLifePlugin,
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerFileSuccess | HandlerFailure> {
-    const params = <CreateParams>incomingParams;
+    const params = <CreateParams> incomingParams;
     const { apply, silent } = params;
     const ifExists = params["if-exists"];
     const shouldFocusNote = !silent;
-    const templateFile =
-      apply === "templater" || apply === "templates"
-        ? (<createTemplateParams>params)["template-file"]
-        : undefined;
-    const content =
-      apply === "content" ? (<createContentParams>params).content || "" : "";
+    const templateFile = apply === "templater" || apply === "templates"
+      ? (<createTemplateParams> params)["template-file"]
+      : undefined;
+    const content = apply === "content"
+      ? (<createContentParams> params).content || ""
+      : "";
     let pluginInstance;
 
     if (!checkForEnabledPeriodicNoteFeature(periodicNoteType)) {
       return failure(
         ErrorCode.FeatureUnavailable,
-        STRINGS[`${periodicNoteType}_note`].feature_not_available
+        STRINGS[`${periodicNoteType}_note`].feature_not_available,
       );
     }
 
@@ -347,7 +349,7 @@ function getHandleCreate(periodicNoteType: PeriodicNoteType): HandlerFunction {
         default:
           return failure(
             ErrorCode.NoteAlreadyExists,
-            STRINGS[`${periodicNoteType}_note`].create_note_already_exists
+            STRINGS[`${periodicNoteType}_note`].create_note_already_exists,
           );
       }
     }
@@ -387,9 +389,9 @@ function getHandleCreate(periodicNoteType: PeriodicNoteType): HandlerFunction {
 
 function getHandleAppend(periodicNoteType: PeriodicNoteType): HandlerFunction {
   return async function handleAppend(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerTextSuccess | HandlerFailure> {
-    const params = <AppendParams>incomingParams;
+    const params = <AppendParams> incomingParams;
     const { content, silent } = params;
     const belowHeadline = params["below-headline"];
     const shouldCreateNote = params["create-if-not-found"];
@@ -407,8 +409,9 @@ function getHandleAppend(periodicNoteType: PeriodicNoteType): HandlerFunction {
     }
 
     // See if the file exists, and if so, append to it.
-    const resGetPath =
-      getExistingPeriodicNotePathIfPluginIsAvailable(periodicNoteType);
+    const resGetPath = getExistingPeriodicNotePathIfPluginIsAvailable(
+      periodicNoteType,
+    );
     if (resGetPath.isSuccess) {
       const filepath = resGetPath.result;
       const resAppend = await appendAsRequested(filepath);
@@ -441,9 +444,9 @@ function getHandleAppend(periodicNoteType: PeriodicNoteType): HandlerFunction {
 
 function getHandlePrepend(periodicNoteType: PeriodicNoteType): HandlerFunction {
   return async function handlePrepend(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerTextSuccess | HandlerFailure> {
-    const params = <PrependParams>incomingParams;
+    const params = <PrependParams> incomingParams;
     const { content, silent } = params;
     const belowHeadline = params["below-headline"];
     const shouldCreateNote = params["create-if-not-found"];
@@ -459,7 +462,7 @@ function getHandlePrepend(periodicNoteType: PeriodicNoteType): HandlerFunction {
           filepath,
           belowHeadline,
           content,
-          shouldEnsureNewline
+          shouldEnsureNewline,
         );
       }
 
@@ -467,13 +470,14 @@ function getHandlePrepend(periodicNoteType: PeriodicNoteType): HandlerFunction {
         filepath,
         content,
         shouldEnsureNewline,
-        shouldIgnoreFrontMatter
+        shouldIgnoreFrontMatter,
       );
     }
 
     // See if the file exists, and if so, append to it.
-    const resGetPath =
-      getExistingPeriodicNotePathIfPluginIsAvailable(periodicNoteType);
+    const resGetPath = getExistingPeriodicNotePathIfPluginIsAvailable(
+      periodicNoteType,
+    );
     if (resGetPath.isSuccess) {
       const filepath = resGetPath.result;
       const resPrepend = await prependAsRequested(filepath);
@@ -505,16 +509,17 @@ function getHandlePrepend(periodicNoteType: PeriodicNoteType): HandlerFunction {
 }
 
 function getHandleSearchStringAndReplace(
-  periodicNoteType: PeriodicNoteType
+  periodicNoteType: PeriodicNoteType,
 ): HandlerFunction {
   return async function handleSearchStringAndReplace(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerTextSuccess | HandlerFailure> {
-    const { search, replace, silent } = <SearchAndReplaceParams>incomingParams;
+    const { search, replace, silent } = <SearchAndReplaceParams> incomingParams;
     const shouldFocusNote = !silent;
 
-    const resDNP =
-      getExistingPeriodicNotePathIfPluginIsAvailable(periodicNoteType);
+    const resDNP = getExistingPeriodicNotePathIfPluginIsAvailable(
+      periodicNoteType,
+    );
     if (!resDNP.isSuccess) return resDNP;
     const filepath = resDNP.result;
 
@@ -526,16 +531,17 @@ function getHandleSearchStringAndReplace(
 }
 
 function getHandleSearchRegexAndReplace(
-  periodicNoteType: PeriodicNoteType
+  periodicNoteType: PeriodicNoteType,
 ): HandlerFunction {
   return async function handleSearchRegexAndReplace(
-    incomingParams: AnyParams
+    incomingParams: AnyParams,
   ): Promise<HandlerTextSuccess | HandlerFailure> {
-    const { search, replace, silent } = <SearchAndReplaceParams>incomingParams;
+    const { search, replace, silent } = <SearchAndReplaceParams> incomingParams;
     const shouldFocusNote = !silent;
 
-    const resDNP =
-      getExistingPeriodicNotePathIfPluginIsAvailable(periodicNoteType);
+    const resDNP = getExistingPeriodicNotePathIfPluginIsAvailable(
+      periodicNoteType,
+    );
     if (!resDNP.isSuccess) return resDNP;
     const filepath = resDNP.result;
 

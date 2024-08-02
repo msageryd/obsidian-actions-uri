@@ -49,19 +49,19 @@ export const routePath: RoutePath = {
 // HANDLERS --------------------
 
 async function handleOpen(
-  params: IncomingBaseParams
+  params: IncomingBaseParams,
 ): Promise<HandlerVaultSuccess | HandlerFailure> {
   // If we're here, then the vault is already open.
   return success({});
 }
 
 async function handleClose(
-  params: IncomingBaseParams
+  params: IncomingBaseParams,
 ): Promise<HandlerVaultSuccess | HandlerFailure> {
   if (Platform.isMobileApp) {
     return failure(
       ErrorCode.FeatureUnavailable,
-      STRINGS.not_available_on_mobile
+      STRINGS.not_available_on_mobile,
     );
   }
 
@@ -72,11 +72,11 @@ async function handleClose(
 
 async function handleInfo(
   this: RealLifePlugin,
-  params: DefaultParams
+  params: DefaultParams,
 ): Promise<HandlerVaultInfoSuccess | HandlerFailure> {
   const { vault } = this.app;
-  const { config } = <RealLifeVault>vault;
-  const basePath = (<RealLifeDataAdapter>vault.adapter).basePath;
+  const { config } = <RealLifeVault> vault;
+  const basePath = (<RealLifeDataAdapter> vault.adapter).basePath;
 
   if (!config || !basePath) {
     return failure(ErrorCode.NotFound, STRINGS.vault_internals_not_found);
@@ -86,18 +86,17 @@ async function handleInfo(
     basePath,
     attachmentFolderPath: `${basePath}/${config.attachmentFolderPath}`.replace(
       /\/$/,
-      ""
+      "",
     ),
-    newFileFolderPath:
-      config.newFileLocation === "folder"
-        ? `${basePath}/${config.newFileFolderPath}`.replace(/\/$/, "")
-        : basePath,
+    newFileFolderPath: config.newFileLocation === "folder"
+      ? `${basePath}/${config.newFileFolderPath}`.replace(/\/$/, "")
+      : basePath,
   });
 }
 
 async function handleListFiles(
   this: RealLifePlugin,
-  params: DefaultParams
+  params: DefaultParams,
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   return success({
     paths: this.app.vault
@@ -109,7 +108,7 @@ async function handleListFiles(
 
 async function handleListFilesExceptNotes(
   this: RealLifePlugin,
-  params: DefaultParams
+  params: DefaultParams,
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   const { vault } = this.app;
   const files = vault.getFiles().map((t) => t.path);

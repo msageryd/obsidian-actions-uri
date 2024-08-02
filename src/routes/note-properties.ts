@@ -69,35 +69,34 @@ export const routePath: RoutePath = {
 // HANDLERS --------------------
 
 async function handleGet(
-  params: GetParams
+  params: GetParams,
 ): Promise<HandlerPropertiesSuccess | HandlerFailure> {
   const {
     _resolved: { inputFile },
   } = params;
   return success(
     { properties: propertiesForFile(inputFile!) },
-    inputFile?.path
+    inputFile?.path,
   );
 }
 
 async function handleSet(
-  params: SetParams
+  params: SetParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const {
     _resolved: { inputFile },
     mode,
     properties,
   } = params;
-  const props =
-    mode === "update"
-      ? { ...propertiesForFile(inputFile!), ...properties }
-      : properties;
+  const props = mode === "update"
+    ? { ...propertiesForFile(inputFile!), ...properties }
+    : properties;
 
   return updateNote(inputFile!.path, sanitizedStringifyYaml(props));
 }
 
 async function handleClear(
-  params: GetParams
+  params: GetParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath: path },
@@ -106,7 +105,7 @@ async function handleClear(
 }
 
 async function handleRemoveKeys(
-  params: RemoveKeysParams
+  params: RemoveKeysParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
   const {
     _resolved: { inputPath: path, inputFile },
@@ -114,7 +113,7 @@ async function handleRemoveKeys(
   } = params;
 
   const props = propertiesForFile(inputFile!)!;
-  (<string[]>keys).forEach((key) => delete props[key]);
+  (<string[]> keys).forEach((key) => delete props[key]);
 
   return updateNote(path, sanitizedStringifyYaml(props));
 }

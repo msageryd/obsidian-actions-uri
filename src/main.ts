@@ -35,7 +35,6 @@ export default class ActionsURI extends Plugin {
   // @ts-ignore
   settings: PluginSettings;
   httpServer!: IHttpServer;
-  registeredRoutes: Record<string, HandlerFunction> = {};
 
   defaultSettings: PluginSettings = {
     frontmatterKey: "uid",
@@ -45,8 +44,8 @@ export default class ActionsURI extends Plugin {
     self(this);
 
     await this.loadSettings();
-    this.addSettingTab(new SettingsTab(this.app, this));
     this.registerRoutes(routes);
+    this.addSettingTab(new SettingsTab(this.app, this));
 
     // Maybe start the HTTP server
     const enableHttpServer = !Platform.isMobile; // && this.settings.enableHttpServer ;
@@ -87,6 +86,7 @@ export default class ActionsURI extends Plugin {
    * route tree
    */
   private registerRoutes(routeTree: RoutePath) {
+    const registeredRoutes: string[] = [];
     for (const [routePath, routeSubpaths] of Object.entries(routeTree)) {
       for (const route of routeSubpaths) {
         const { path, schema, handler } = route;
@@ -97,8 +97,6 @@ export default class ActionsURI extends Plugin {
         this.registerObsidianProtocolHandler(
           fullPath,
           async (incomingParams) => {
-            console.log(incomingParams);
-
             const res = await schema.safeParseAsync(incomingParams);
             res.success
               ? await this.handleIncomingCall(
@@ -108,10 +106,11 @@ export default class ActionsURI extends Plugin {
               : this.handleParseError(res.error, incomingParams);
           }
         );
+        registeredRoutes.push(fullPath);
       }
     }
 
-    logToConsole("Registered URI handlers:", this.registeredRoutes);
+    logToConsole("Registered URI handlers:", registeredRoutes);
   }
 
   /**
