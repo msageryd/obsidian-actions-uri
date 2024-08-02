@@ -1,8 +1,8 @@
 import {
   normalizePath,
   ObsidianProtocolData,
-  Plugin,
   Platform,
+  Plugin,
   TAbstractFile,
 } from "obsidian";
 
@@ -91,7 +91,7 @@ export default class ActionsURI extends Plugin {
       for (const route of routeSubpaths) {
         const { path, schema, handler } = route;
         const fullPath = normalizePath(
-          `${URI_NAMESPACE}/${routePath}/${path}`
+          `${URI_NAMESPACE}/${routePath}/${path}`,
         ).replace(/\/$/, "");
 
         this.registerObsidianProtocolHandler(
@@ -100,11 +100,11 @@ export default class ActionsURI extends Plugin {
             const res = await schema.safeParseAsync(incomingParams);
             res.success
               ? await this.handleIncomingCall(
-                  handler,
-                  res.data as z.infer<typeof schema>
-                )
+                handler,
+                res.data as z.infer<typeof schema>,
+              )
               : this.handleParseError(res.error, incomingParams);
-          }
+          },
         );
         registeredRoutes.push(fullPath);
       }
@@ -127,20 +127,20 @@ export default class ActionsURI extends Plugin {
    */
   async handleIncomingCall(
     handlerFunc: HandlerFunction,
-    params: AnyParams
+    params: AnyParams,
   ): Promise<ProcessingResult> {
     let handlerResult: AnyHandlerResult;
 
     try {
       handlerResult = await handlerFunc.bind(this)(params);
     } catch (error) {
-      const msg = `Handler error: ${(<Error>error).message}`;
+      const msg = `Handler error: ${(<Error> error).message}`;
       handlerResult = failure(ErrorCode.HandlerError, msg);
       showBrandedNotice(msg);
       logErrorToConsole(msg);
     }
 
-    const res = <ProcessingResult>{
+    const res = <ProcessingResult> {
       params: this.prepParamsForConsole(params),
       handlerResult,
       sendCallbackResult: this.sendUrlCallbackIfNeeded(handlerResult, params),
@@ -160,11 +160,11 @@ export default class ActionsURI extends Plugin {
     const newParams: any = { ...params };
 
     Object.keys(params).forEach((key) => {
-      const value = (<any>params)[key];
+      const value = (<any> params)[key];
       newParams[key] = value instanceof TAbstractFile ? value.path : value;
     });
 
-    return <AnyParams>newParams;
+    return <AnyParams> newParams;
   }
 
   /**
@@ -199,19 +199,18 @@ export default class ActionsURI extends Plugin {
     // If there's a "note not found" error, that's the biggest issue, we'll
     // return only that
     const error404 = parseError.errors.find(
-      (e) => e.message === STRINGS.note_not_found
+      (e) => e.message === STRINGS.note_not_found,
     );
     if (error404) {
       sendUrlCallback(
         params["x-error"],
         failure(ErrorCode.NotFound, `[Not found] ${error404.path.join(", ")}`),
-        params
+        params,
       );
       return;
     }
 
-    const msg2 =
-      "[Bad request] " +
+    const msg2 = "[Bad request] " +
       parseError.errors
         .map((e) => {
           return e.path.length > 0
@@ -223,7 +222,7 @@ export default class ActionsURI extends Plugin {
     sendUrlCallback(
       params["x-error"],
       failure(ErrorCode.HandlerError, msg2),
-      params
+      params,
     );
   }
 
@@ -244,20 +243,20 @@ export default class ActionsURI extends Plugin {
    */
   private sendUrlCallbackIfNeeded(
     handlerRes: AnyHandlerResult,
-    params: AnyParams
+    params: AnyParams,
   ): StringResultObject {
     if (handlerRes.isSuccess) {
       return params["x-success"]
         ? sendUrlCallback(
-            params["x-success"],
-            <AnyHandlerSuccess>handlerRes,
-            params
-          )
+          params["x-success"],
+          <AnyHandlerSuccess> handlerRes,
+          params,
+        )
         : success("No `x-error` callback URL provided");
     }
 
     return params["x-error"]
-      ? sendUrlCallback(params["x-error"], <HandlerFailure>handlerRes, params)
+      ? sendUrlCallback(params["x-error"], <HandlerFailure> handlerRes, params)
       : success("No `x-error` callback URL provided");
   }
 
@@ -272,22 +271,22 @@ export default class ActionsURI extends Plugin {
    */
   private async openFileIfNeeded(
     handlerResult: AnyHandlerResult,
-    params: AnyParams
+    params: AnyParams,
   ): Promise<StringResultObject> {
     // Do we need to open anything in general?
     if (!handlerResult.isSuccess) {
       return success("No file to open, the handler failed");
     }
 
-    if ((<any>params).silent) {
+    if ((<any> params).silent) {
       return success("No file to open, the `silent` parameter was set");
     }
 
     // Do we have information what to open?
-    const { processedFilepath } = <HandlerFileSuccess>handlerResult;
+    const { processedFilepath } = <HandlerFileSuccess> handlerResult;
     if (!processedFilepath) {
       return success(
-        "No file to open, handler didn't return a `processedFilepath` property"
+        "No file to open, handler didn't return a `processedFilepath` property",
       );
     }
 
