@@ -24,7 +24,10 @@ import {
 
 // SCHEMATA ----------------------------------------
 
-const defaultParams = incomingBaseParams.extend({});
+const defaultParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 
 const openParams = incomingBaseParams.extend({
   file: zodExistingFilePath,
@@ -74,10 +77,7 @@ async function handleList(
   params: DefaultParams,
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   return success({
-    paths: this.app.vault
-      .getFiles()
-      .map((t) => t.path)
-      .sort(),
+    paths: this.app.vault.getFiles().map((t) => t.path).sort(),
   });
 }
 

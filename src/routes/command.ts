@@ -15,7 +15,10 @@ import { zodCommaSeparatedStrings } from "src/utils/zod";
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({});
+const listParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 
 const executeParams = incomingBaseParams.extend({
   commands: zodCommaSeparatedStrings,
@@ -27,7 +30,9 @@ const executeParams = incomingBaseParams.extend({
 type ListParams = z.infer<typeof listParams>;
 type ExecuteParams = z.infer<typeof executeParams>;
 
-export type AnyLocalParams = ListParams | ExecuteParams;
+export type AnyLocalParams =
+  | ListParams
+  | ExecuteParams;
 
 // ROUTES ----------------------------------------
 

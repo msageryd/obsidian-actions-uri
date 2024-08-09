@@ -69,23 +69,32 @@ enum IfHeadlineMissingParameterValue {
   Skip = "skip",
 }
 
-const listParams = incomingBaseParams.extend({
-  "periodic-note": z.nativeEnum(PeriodicNoteType).optional(),
-});
+const listParams = incomingBaseParams
+  .extend({
+    "periodic-note": z.nativeEnum(PeriodicNoteType).optional(),
+    "x-error": z.string().url(),
+    "x-success": z.string().url(),
+  });
 
 const getParams = incomingBaseParams
   .merge(noteTargetingWithRecentsParams)
   .extend({
     silent: zodOptionalBoolean,
+    "x-error": z.string().url(),
+    "x-success": z.string().url(),
   })
   .transform(resolveNoteTargetingStrict);
 
-const getActiveParams = incomingBaseParams.extend({});
+const getActiveParams = incomingBaseParams
+  .extend({
+    "x-error": z.string().url(),
+    "x-success": z.string().url(),
+  });
 
-const readNamedParams = incomingBaseParams.extend({
-  file: zodSanitizedNotePath,
-  "sort-by": z
-    .enum([
+const readNamedParams = incomingBaseParams
+  .extend({
+    file: zodSanitizedNotePath,
+    "sort-by": z.enum([
       "best-guess",
       "path-asc",
       "path-desc",
@@ -94,9 +103,10 @@ const readNamedParams = incomingBaseParams.extend({
       "mtime-asc",
       "mtime-desc",
       "",
-    ])
-    .optional(),
-});
+    ]).optional(),
+    "x-error": z.string().url(),
+    "x-success": z.string().url(),
+  });
 
 const openParams = incomingBaseParams
   .merge(noteTargetingWithRecentsParams)
@@ -110,8 +120,7 @@ const appendParams = incomingBaseParams
     "below-headline": z.string().optional(),
     "create-if-not-found": zodOptionalBoolean,
     "ensure-newline": zodOptionalBoolean,
-    "if-headline-missing": z
-      .nativeEnum(IfHeadlineMissingParameterValue)
+    "if-headline-missing": z.nativeEnum(IfHeadlineMissingParameterValue)
       .optional()
       .default(IfHeadlineMissingParameterValue.Error),
   })
@@ -126,8 +135,7 @@ const prependParams = incomingBaseParams
     "create-if-not-found": zodOptionalBoolean,
     "ensure-headline": zodOptionalBoolean,
     "ensure-newline": zodOptionalBoolean,
-    "if-headline-missing": z
-      .nativeEnum(IfHeadlineMissingParameterValue)
+    "if-headline-missing": z.nativeEnum(IfHeadlineMissingParameterValue)
       .optional()
       .default(IfHeadlineMissingParameterValue.Error),
     "ignore-front-matter": zodOptionalBoolean,
@@ -238,10 +246,7 @@ async function handleList(
   // If no periodic note type is specified, we return all notes.
   if (!periodicNoteType) {
     return success({
-      paths: this.app.vault
-        .getMarkdownFiles()
-        .map((t) => t.path)
-        .sort(),
+      paths: this.app.vault.getMarkdownFiles().map((t) => t.path).sort(),
     });
   }
 
@@ -255,10 +260,7 @@ async function handleList(
 
   const notes = getAllPeriodicNotes(periodicNoteType);
   return success({
-    paths: Object.keys(notes)
-      .sort()
-      .reverse()
-      .map((k) => notes[k].path),
+    paths: Object.keys(notes).sort().reverse().map((k) => notes[k].path),
   });
 }
 
@@ -269,10 +271,7 @@ async function handleList(
 async function handleGet(
   params: GetParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-    silent,
-  } = params;
+  const { _resolved: { inputPath }, silent } = params;
   const res = await getNoteDetails(inputPath);
   if (res.isSuccess && !silent) await focusOrOpenFile(inputPath);
   return res;
@@ -310,10 +309,8 @@ async function handleGetNamed(
   // "Best guess" means utilizing Obsidian's internal link resolution to find
   // the right note. If it's not found, we return a 404.
   if (sortBy === "best-guess") {
-    const res = this.app.metadataCache.getFirstLinkpathDest(
-      sanitizeFilePath(file),
-      "/",
-    );
+    const res = this.app.metadataCache
+      .getFirstLinkpathDest(sanitizeFilePath(file), "/");
     return res
       ? await getNoteDetails(res.path)
       : failure(ErrorCode.NotFound, "No note found with that name");
@@ -330,8 +327,7 @@ async function handleGetNamed(
     "mtime-desc": (a: TFile, b: TFile) => b.stat.mtime - a.stat.mtime,
   };
 
-  const res = this.app.vault
-    .getMarkdownFiles()
+  const res = this.app.vault.getMarkdownFiles()
     .sort(sortFns[sortBy])
     .find((tf) => tf.name === file);
   if (!res) return failure(ErrorCode.NotFound, "No note found with that name");
@@ -346,9 +342,7 @@ async function handleGetNamed(
 async function handleOpen(
   params: OpenParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-  } = params;
+  const { _resolved: { inputPath } } = params;
   const res = await getNote(inputPath);
   return res.isSuccess
     ? success({ message: STRINGS.note_opened }, res.result.path)
@@ -359,28 +353,23 @@ async function handleCreate(
   this: RealLifePlugin,
   params: CreateParams,
 ): Promise<HandlerFileSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputKey },
-  } = params;
+  const { _resolved: { inputKey } } = params;
 
   if (inputKey === NoteTargetingParameterKey.PeriodicNote) {
-    return _handleCreatePeriodicNote.bind(this)(
-      params as CreatePeriodicNoteParams,
-    );
+    return _handleCreatePeriodicNote
+      .bind(this)(params as CreatePeriodicNoteParams);
   }
 
   const applyValue = (params as AnyCreateNoteApplyParams).apply;
   switch (applyValue) {
     case CreateApplyParameterValue.Content:
-      return _handleCreateNoteFromContent.bind(this)(
-        params as CreateNoteApplyContentParams,
-      );
+      return _handleCreateNoteFromContent
+        .bind(this)(params as CreateNoteApplyContentParams);
 
     case CreateApplyParameterValue.Templater:
     case CreateApplyParameterValue.Templates:
-      return _handleCreateNoteFromTemplate.bind(this)(
-        params as CreateNoteApplyTemplateParams,
-      );
+      return _handleCreateNoteFromTemplate
+        .bind(this)(params as CreateNoteApplyTemplateParams);
   }
 }
 
@@ -402,10 +391,13 @@ async function handleAppend(
   // If the note was requested via UID, doesn't exist but should be created,
   // we'll use the UID as path. Otherwise, we'll use the resolved path as it was
   // passed in.
-  const path =
-    !inputFile && inputKey === NoteTargetingParameterKey.UID && shouldCreateNote
-      ? uid!
-      : inputPath;
+  const path = (
+      !inputFile &&
+      inputKey === NoteTargetingParameterKey.UID &&
+      shouldCreateNote
+    )
+    ? uid!
+    : inputPath;
 
   async function appendAsRequested() {
     if (belowHeadline) {
@@ -439,7 +431,7 @@ async function handleAppend(
     if (inputKey === NoteTargetingParameterKey.UID) {
       await this.app.fileManager.processFrontMatter(
         resCreate.result,
-        (fm) => (fm[this.settings.frontmatterKey] = uid!),
+        (fm) => fm[this.settings.frontmatterKey] = uid!,
       );
     }
   }
@@ -472,10 +464,13 @@ async function handlePrepend(
   // If the note was requested via UID, doesn't exist but should be created,
   // we'll use the UID as path. Otherwise, we'll use the resolved path as it was
   // passed in.
-  const path =
-    !inputFile && inputKey === NoteTargetingParameterKey.UID && shouldCreateNote
-      ? uid!
-      : inputPath;
+  const path = (
+      !inputFile &&
+      inputKey === NoteTargetingParameterKey.UID &&
+      shouldCreateNote
+    )
+    ? uid!
+    : inputPath;
 
   async function prependAsRequested() {
     if (belowHeadline) {
@@ -522,7 +517,7 @@ async function handlePrepend(
     if (inputKey === NoteTargetingParameterKey.UID) {
       await this.app.fileManager.processFrontMatter(
         resCreate.result,
-        (fm) => (fm[this.settings.frontmatterKey] = uid!),
+        (fm) => fm[this.settings.frontmatterKey] = uid!,
       );
     }
   }
@@ -539,10 +534,7 @@ async function handlePrepend(
 async function handleTouch(
   params: TouchParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-    silent,
-  } = params;
+  const { _resolved: { inputPath }, silent } = params;
 
   const res = await touchNote(inputPath);
   if (!res.isSuccess) return res;
@@ -553,12 +545,7 @@ async function handleTouch(
 async function handleSearchStringAndReplace(
   params: SearchAndReplaceParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-    search,
-    replace,
-    silent,
-  } = params;
+  const { _resolved: { inputPath }, search, replace, silent } = params;
 
   const res = await searchAndReplaceInNote(inputPath, search, replace);
   if (!res.isSuccess) return res;
@@ -569,12 +556,7 @@ async function handleSearchStringAndReplace(
 async function handleSearchRegexAndReplace(
   params: SearchAndReplaceParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-    search,
-    replace,
-    silent,
-  } = params;
+  const { _resolved: { inputPath }, search, replace, silent } = params;
 
   const resSir = parseStringIntoRegex(search);
   if (!resSir.isSuccess) return resSir;
@@ -588,9 +570,7 @@ async function handleSearchRegexAndReplace(
 async function handleDelete(
   params: DeleteParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-  } = params;
+  const { _resolved: { inputPath } } = params;
 
   const res = await trashFilepath(inputPath, true);
   return res.isSuccess ? success({ message: res.result }, inputPath) : res;
@@ -599,9 +579,7 @@ async function handleDelete(
 async function handleTrash(
   params: DeleteParams,
 ): Promise<HandlerTextSuccess | HandlerFailure> {
-  const {
-    _resolved: { inputPath },
-  } = params;
+  const { _resolved: { inputPath } } = params;
 
   const res = await trashFilepath(inputPath);
   return res.isSuccess ? success({ message: res.result }, inputPath) : res;

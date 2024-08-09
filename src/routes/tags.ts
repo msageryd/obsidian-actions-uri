@@ -7,7 +7,10 @@ import { helloRoute } from "src/utils/routing";
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({});
+const listParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 
 // TYPES ----------------------------------------
 
@@ -31,8 +34,7 @@ async function handleList(
   params: ListParams,
 ): Promise<HandlerTagsSuccess | HandlerFailure> {
   return success({
-    tags: Object.keys(this.app.metadataCache.getTags()).sort((a, b) =>
-      a.localeCompare(b)
-    ),
+    tags: Object.keys(this.app.metadataCache.getTags())
+      .sort((a, b) => a.localeCompare(b)),
   });
 }

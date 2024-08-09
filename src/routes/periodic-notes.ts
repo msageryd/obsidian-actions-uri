@@ -49,11 +49,16 @@ import {
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({});
+const listParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 type ListParams = z.infer<typeof listParams>;
 
 const readParams = incomingBaseParams.extend({
   silent: zodOptionalBoolean,
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
 });
 type ReadParams = z.infer<typeof readParams>;
 
@@ -213,10 +218,7 @@ function getHandleList(periodicNoteType: PeriodicNoteType): HandlerFunction {
 
     const notes = getAllPeriodicNotes(periodicNoteType);
     return success({
-      paths: Object.keys(notes)
-        .sort()
-        .reverse()
-        .map((k) => notes[k].path),
+      paths: Object.keys(notes).sort().reverse().map((k) => notes[k].path),
     });
   };
 }
@@ -304,10 +306,10 @@ function getHandleCreate(periodicNoteType: PeriodicNoteType): HandlerFunction {
     const { apply, silent } = params;
     const ifExists = params["if-exists"];
     const shouldFocusNote = !silent;
-    const templateFile = apply === "templater" || apply === "templates"
+    const templateFile = (apply === "templater" || apply === "templates")
       ? (<createTemplateParams> params)["template-file"]
       : undefined;
-    const content = apply === "content"
+    const content = (apply === "content")
       ? (<createContentParams> params).content || ""
       : "";
     let pluginInstance;
@@ -402,7 +404,11 @@ function getHandleAppend(periodicNoteType: PeriodicNoteType): HandlerFunction {
     // forgetting a parameter or something in the future.
     async function appendAsRequested(filepath: string) {
       if (belowHeadline) {
-        return await appendNoteBelowHeadline(filepath, belowHeadline, content);
+        return await appendNoteBelowHeadline(
+          filepath,
+          belowHeadline,
+          content,
+        );
       }
 
       return await appendNote(filepath, content, shouldEnsureNewline);

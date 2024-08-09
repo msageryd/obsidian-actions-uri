@@ -20,7 +20,10 @@ import { success } from "src/utils/results-handling";
 
 // SCHEMATA ----------------------------------------
 
-const listParams = incomingBaseParams.extend({});
+const listParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 
 const createParams = incomingBaseParams.extend({
   folder: zodSanitizedFolderPath,
@@ -42,7 +45,10 @@ type CreateParams = z.infer<typeof createParams>;
 type DeleteParams = z.infer<typeof deleteParams>;
 type RenameParams = z.infer<typeof renameParams>;
 
-export type AnyLocalParams = ListParams | CreateParams | DeleteParams;
+export type AnyLocalParams =
+  | ListParams
+  | CreateParams
+  | DeleteParams;
 
 // ROUTES ----------------------------------------
 
@@ -65,8 +71,7 @@ async function handleList(
   return success({
     paths: getFileMap()
       .filter((t) => t instanceof TFolder)
-      .map((t) => (t.path.endsWith("/") ? t.path : `${t.path}/`))
-      .sort(),
+      .map((t) => t.path.endsWith("/") ? t.path : `${t.path}/`).sort(),
   });
 }
 

@@ -18,7 +18,9 @@ import { helloRoute } from "src/utils/routing";
 // SCHEMATA ----------------------------------------
 
 const readParams = incomingBaseParams.extend({
-  dql: z.string(),
+  "dql": z.string(),
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
 });
 
 // TYPES ----------------------------------------

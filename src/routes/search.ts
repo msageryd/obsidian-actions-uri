@@ -15,6 +15,8 @@ import { doSearch } from "src/utils/search";
 
 const defaultParams = incomingBaseParams.extend({
   query: z.string().min(1, { message: "can't be empty" }),
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
 });
 
 const openParams = incomingBaseParams.extend({
@@ -26,7 +28,9 @@ const openParams = incomingBaseParams.extend({
 type DefaultParams = z.infer<typeof defaultParams>;
 type OpenParams = z.infer<typeof openParams>;
 
-export type AnyLocalParams = DefaultParams | OpenParams;
+export type AnyLocalParams =
+  | DefaultParams
+  | OpenParams;
 
 // ROUTES --------------------
 
@@ -54,10 +58,8 @@ async function handleOpen(
   // Let's open the search in the simplest way possible.
   window.open(
     "obsidian://search?" +
-      "vault=" +
-      encodeURIComponent(this.app.vault.getName()) +
-      "&query=" +
-      encodeURIComponent(params.query.trim()),
+      "vault=" + encodeURIComponent(this.app.vault.getName()) +
+      "&query=" + encodeURIComponent(params.query.trim()),
   );
 
   return success({ message: "Opened search" });

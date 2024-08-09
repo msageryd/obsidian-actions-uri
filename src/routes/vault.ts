@@ -17,7 +17,10 @@ import { helloRoute } from "src/utils/routing";
 
 // SCHEMATA --------------------
 
-const defaultParams = incomingBaseParams.extend({});
+const defaultParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 
 // TYPES ----------------------------------------
 
@@ -84,13 +87,13 @@ async function handleInfo(
 
   return success({
     basePath,
-    attachmentFolderPath: `${basePath}/${config.attachmentFolderPath}`.replace(
-      /\/$/,
-      "",
+    attachmentFolderPath: `${basePath}/${config.attachmentFolderPath}`
+      .replace(/\/$/, ""),
+    newFileFolderPath: (
+      config.newFileLocation === "folder"
+        ? `${basePath}/${config.newFileFolderPath}`.replace(/\/$/, "")
+        : basePath
     ),
-    newFileFolderPath: config.newFileLocation === "folder"
-      ? `${basePath}/${config.newFileFolderPath}`.replace(/\/$/, "")
-      : basePath,
   });
 }
 
@@ -99,10 +102,7 @@ async function handleListFiles(
   params: DefaultParams,
 ): Promise<HandlerPathsSuccess | HandlerFailure> {
   return success({
-    paths: this.app.vault
-      .getFiles()
-      .map((t) => t.path)
-      .sort(),
+    paths: this.app.vault.getFiles().map((t) => t.path).sort(),
   });
 }
 

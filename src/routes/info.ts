@@ -8,7 +8,10 @@ import { success } from "src/utils/results-handling";
 
 // SCHEMATA --------------------
 
-const defaultParams = incomingBaseParams.extend({});
+const defaultParams = incomingBaseParams.extend({
+  "x-error": z.string().url(),
+  "x-success": z.string().url(),
+});
 type DefaultParams = z.infer<typeof defaultParams>;
 
 export type AnyLocalParams = DefaultParams;
@@ -16,12 +19,16 @@ export type AnyLocalParams = DefaultParams;
 // ROUTES --------------------
 
 export const routePath: RoutePath = {
-  "/info": [{ path: "/", schema: defaultParams, handler: handleInfo }],
+  "/info": [
+    { path: "/", schema: defaultParams, handler: handleInfo },
+  ],
 };
 
 // HANDLERS --------------------
 
-async function handleInfo(params: DefaultParams): Promise<HandlerInfoSuccess> {
+async function handleInfo(
+  params: DefaultParams,
+): Promise<HandlerInfoSuccess> {
   const uaMatch = navigator.userAgent.match(/\((.+?)\)/);
   const os: string = uaMatch ? uaMatch[1] : "unknown";
   const { isAndroidApp, isDesktopApp, isIosApp, isMacOS } = Platform;
