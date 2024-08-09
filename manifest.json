@@ -4,7 +4,7 @@
   "version": "1.6.3",
   "minAppVersion": "1.5.0",
   "description": "Adds additional `x-callback-url` endpoints to the app for common actions — it's a clean, super-charged addition to Obsidian URI.",
-  "author": "Carlo Zottmann. Forked and converted to http server by Michael Sageryd",
+  "author": "Carlo Zottmann",
   "authorUrl": "https://github.com/czottmann",
   "isDesktopOnly": false
 }
