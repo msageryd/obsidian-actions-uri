@@ -252,7 +252,7 @@ export default class ActionsURI extends Plugin {
           <AnyHandlerSuccess> handlerRes,
           params,
         )
-        : success("No `x-error` callback URL provided");
+        : success("No `x-success` callback URL provided");
     }
 
     return params["x-error"]

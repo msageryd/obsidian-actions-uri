@@ -9,29 +9,29 @@ if you want to view the source, please visit the github repository of this plugi
 */
 `;
 
+const devDeployScripts = {
+  czottmann: "../bin/sync-current-plugins-to-workbench-vault.fish",
+  michaelsageryd: "../bin/sync-current-plugins-to-workbench-vault.sh",
+};
+
 const isProduction = process.argv[2] === "production";
 const rsyncPlugin = {
   name: "rsyncPlugin",
   setup(build) {
     build.onEnd((result) => {
-      if (process.env.USER !== "michaelsageryd" || isProduction) {
+      const devDeployScript = devDeployScripts[process.env.USER];
+      if (!devDeployScript || isProduction) {
         return;
       }
 
-      exec(
-        "../bin/sync-current-plugins-to-workbench-vault.sh",
-        (error, stdout, stderr) => {
-          if (error) {
-            console.log(`exec error: ${error}`);
-          }
-          if (stderr) {
-            console.log(stderr);
-          } else
-            console.log(
-              "[watch] sync'd via `../bin/sync-current-plugins-to-workbench-vault.sh`"
-            );
+      exec(devDeployScript, (error, stdout, stderr) => {
+        if (error) {
+          console.log(`exec error: ${error}`);
         }
-      );
+        if (stderr) {
+          console.log(stderr);
+        } else console.log(`[watch] sync'd via ${`${devDeployScript}`}`);
+      });
     });
   },
 };
